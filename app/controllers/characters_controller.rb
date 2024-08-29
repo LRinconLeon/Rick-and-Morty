@@ -1,14 +1,30 @@
 class CharactersController < ApplicationController
+  before_action :set_character, only: [:show, :update, :destroy, :favorite]
+  require 'httparty'
+
   # GET /characters
   def index
-    @characters = Character.all
-    render json: @characters
+    response = HTTParty.get('https://rickandmortyapi.com/api/character')
+    api_characters = response.success? ? response.parsed_response['results'] : []
+
+    custom_characters = Character.all
+
+    render json: { api_characters: api_characters, custom_characters: custom_characters }
   end
 
   # GET /characters/:id
   def show
-    @character = Character.find(params[:id])
     render json: @character
+  end
+
+  # GET /characters/:id/external
+  def show_external
+    response = HTTParty.get("https://rickandmortyapi.com/api/character/#{params[:id]}")
+    if response.success?
+      render json: response.parsed_response
+    else
+      render json: { error: 'Personaje no encontrado en la API externa' }, status: :not_found
+    end
   end
 
   # POST /characters
@@ -23,7 +39,6 @@ class CharactersController < ApplicationController
 
   # PUT /characters/:id
   def update
-    @character = Character.find(params[:id])
     if @character.update(character_params)
       render json: @character
     else
@@ -33,14 +48,27 @@ class CharactersController < ApplicationController
 
   # DELETE /characters/:id
   def destroy
-    @character = Character.find(params[:id])
     @character.destroy
     head :no_content
   end
 
+  # POST /characters/:id/favorite
+  def favorite
+    current_user = User.find(params[:user_id]) # Ajusta esto según tu lógica de autenticación
+    if current_user.characters.include?(@character)
+      render json: { error: 'El personaje ya es favorito' }, status: :unprocessable_entity
+    else
+      current_user.characters << @character
+      render json: { message: 'Personaje marcado como favorito' }, status: :ok
+    end
+  end
+
   private
 
-  # Solo permitir una lista de parámetros confiables a través de.
+  def set_character
+    @character = Character.find(params[:id])
+  end
+
   def character_params
     params.require(:character).permit(:name, :status, :species, :gender, :origin, :image)
   end

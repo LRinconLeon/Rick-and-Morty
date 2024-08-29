@@ -1,28 +1,16 @@
 Rails.application.routes.draw do
-  get 'characters/index'
-  get 'characters/show'
-  get 'characters/create'
-  get 'characters/update'
-  get 'characters/destroy'
-  get 'users/index'
-  get 'users/show'
-  get 'users/create'
-  get 'users/update'
-  get 'users/destroy'
-  get 'sessions/new'
-  get 'sessions/create'
-  get 'sessions/destroy'
-  get 'home/index'
-  # Ruta de inicio
-  root to: 'home#index'
-
-  # Ruta para login
-  get '/login', to: 'sessions#new'
-  post '/login', to: 'sessions#create'
-  delete '/logout', to: 'sessions#destroy'
-
-  # Rutas para usuarios
-  resources :users, only: [:index, :show, :create, :update, :destroy]
-  # Rutas para personajes
-  resources :characters
+  # Rutas para el recurso de usuarios
+  resources :users, only: [:create, :show, :update, :destroy] # Puedes ajustar las acciones disponibles según lo necesites
+  
+  # Rutas para el recurso de personajes
+  resources :characters do
+    # Ruta adicional para buscar en la API externa
+    member do
+      get 'external', to: 'characters#show_external'
+      post 'favorite', to: 'characters#favorite' # Ruta para marcar un personaje como favorito
+    end
+  end
+  
+  # Ruta raíz opcional
+  # root 'home#index' # Ajusta esto a tu controlador y acción de inicio
 end
